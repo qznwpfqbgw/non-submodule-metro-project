@@ -1,0 +1,22 @@
+Default:
+  Type: "TCPv1" # This will match the key of Config
+  Mode: "s" # s: server c: client
+  ServerAddr: "xxx.xxx.xxx.xxx"
+  ServerPort: ["5201"]
+  LogDir: logs # This will use pipe to redirect the stdout log
+  TcpDump:
+    Interface: [] # flag is -C -i, if empty means any
+    File_size: 500 # flag is -C, default 500 MBytes
+    # TODO: more options?
+
+TCPv1:
+  Entry: "iperf3" # executable binary file or command
+  Bitrate:
+    Flag: -b
+    Value: 1M
+  Mode:
+    Flag: -c
+    Value: "127.0.0.1"
+  LogDir: # This will overwrite the Default.LogDir
+    Flag: --logfile
+
