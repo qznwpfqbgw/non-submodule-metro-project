@@ -1,12 +1,19 @@
-#/bin/python3
+#!/bin/python3
 import yaml
 import time
 import datetime as dt
 import subprocess
 import os
+import signal
 
 process_list = []
 log_dir = ""
+
+def signal_handler(signum, frame):
+    print("Signal: ",signum)  
+    for i in process_list:
+        i.terminate()
+    exit(0)  
 
 def create_log_dir(config):
     global log_dir
@@ -24,7 +31,7 @@ def execute_all(cmds: list):
 
 def main():
     # Load config
-    with open("./config.yml.sample", "r") as f:
+    with open("./config.yml", "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
     
@@ -82,6 +89,9 @@ def main():
 
 if __name__ == '__main__':
     try:
+        signal.signal(signal.SIGINT, signal_handler)
+        signal.signal(signal.SIGTERM, signal_handler)
+        signal.signal(signal.SIGTSTP, signal_handler)
         main()
     except BaseException as e:
         print(e)
