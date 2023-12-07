@@ -17,7 +17,7 @@ def signal_handler(signum, frame):
 
 def create_log_dir(config):
     global log_dir
-    log_dir = f"./{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/"
+    log_dir = f"./{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/measurement/"
     print(f"Log dir is {log_dir}")
     if not os.path.exists(log_dir):
         os.umask(0)
@@ -51,7 +51,7 @@ def main():
             continue
         
         if k == "LogDir":
-            log_opt += f"{v['Flag']} {log_file_name}"
+            log_opt += f"{v['Flag']} {log_file_name} "
         else:
             opt += f"{v['Flag']} "
             if "Value" in v:
@@ -77,7 +77,7 @@ def main():
                     tcpdump_opt += f'-i {i} '
         # Split the logfile
         if k == "File_size":
-            tcpdump_opt += f'-C {v}'
+            tcpdump_opt += f'-C {v} '
         
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
     tcpdump_cmd = f"sudo tcpdump {tcpdump_opt}"
