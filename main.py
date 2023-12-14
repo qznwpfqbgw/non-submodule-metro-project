@@ -14,10 +14,11 @@ log_dir = ""
 pool = None
 
 def signal_handler(signum, frame):
+    global pool
     print("Signal: ",signum)
     if pool!= None:
-        pool.close()
-        pool.join()
+        # pool.close()
+        pool.terminate()
     for i in process_list:
         i.terminate()
     exit(0)  
@@ -28,7 +29,9 @@ def create_log_dir(config):
     print(f"Log dir is {log_dir}")
     if not os.path.exists(log_dir):
         os.umask(0)
-        os.makedirs(log_dir)
+        os.makedirs(log_dir + "expr")
+        os.makedirs(log_dir + "tcpdump")
+        os.makedirs(log_dir + "mobileinsight")
 
 
 def execute_all(cmds: list):
@@ -40,6 +43,8 @@ def smap(f):
     return f()
 
 def main():
+    global pool
+    
     # Load config
     with open("./config.yml", "r") as f:
         config = yaml.safe_load(f)
@@ -53,7 +58,7 @@ def main():
     expr_type = config["Default"]["Type"]
     exec_entry = config[expr_type]["Entry"]
     log_file_name = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    log_file_name = log_dir + f"expr/{expr_type}-{log_file_name}.log"
+    log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
     tcpdump_log_file = log_dir + f"tcpdump/{expr_type}-{log_file_name}.pcap"
     mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
     
@@ -63,7 +68,7 @@ def main():
             continue
         
         if k == "LogDir":
-            log_opt += f"{v['Flag']} {log_file_name} "
+            log_opt += f"{v['Flag']} {log_file} "
         else:
             opt += f"{v['Flag']} "
             if "Value" in v:
@@ -118,7 +123,6 @@ if __name__ == '__main__':
     except BaseException as e:
         print(e)
         if pool!= None:
-            pool.close()
-            pool.join()
+            pool.terminate()
         for i in process_list:
             i.terminate()
