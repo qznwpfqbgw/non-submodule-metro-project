@@ -5,12 +5,19 @@ import datetime as dt
 import subprocess
 import os
 import signal
+import json
+from mobileinsight.my_monitor import MyMonitor
+import multiprocessing
 
 process_list = []
 log_dir = ""
+pool = None
 
 def signal_handler(signum, frame):
-    print("Signal: ",signum)  
+    print("Signal: ",signum)
+    if pool!= None:
+        pool.close()
+        pool.join()
     for i in process_list:
         i.terminate()
     exit(0)  
@@ -28,6 +35,9 @@ def execute_all(cmds: list):
     for cmd in cmds:
         print(cmd)
         process_list.append(subprocess.Popen([cmd], shell=True, preexec_fn=os.setpgrp))
+        
+def smap(f):
+    return f()
 
 def main():
     # Load config
@@ -42,10 +52,12 @@ def main():
     tcpdump_opt = ""
     expr_type = config["Default"]["Type"]
     exec_entry = config[expr_type]["Entry"]
-    log_file_name = log_dir + f"{expr_type}-{dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.log"
-    tcpdump_log_file = log_dir + f"{expr_type}-{dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}.pcap"
+    log_file_name = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    log_file_name = log_dir + f"expr/{expr_type}-{log_file_name}.log"
+    tcpdump_log_file = log_dir + f"tcpdump/{expr_type}-{log_file_name}.pcap"
+    mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
     
-    # Experiment set up
+    # Experiment setup
     for k, v in config[expr_type].items():
         if type(v) != dict:
             continue
@@ -57,7 +69,7 @@ def main():
             if "Value" in v:
                 opt += f"{v['Value']} "
                 
-    # Tcpdump set up
+    # Tcpdump setup
     tcpdump_opt += "port '("
     for idx, port in enumerate(config["Default"]["ServerPort"]):
         if idx != 0:
@@ -78,7 +90,17 @@ def main():
         # Split the logfile
         if k == "File_size":
             tcpdump_opt += f'-C {v} '
-        
+            
+    # Mobileinsight setup
+    monitor_funcs = []
+    with open("device_to_serial.json", 'r') as f:
+        device_to_serial = json.load(f)
+        for i in config['Default']['Device']:
+            ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[i]}-if00-port0")
+            monitor_funcs.append(MyMonitor(ser, 9600, f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log").run_monitor)
+    
+    pool = multiprocessing.Pool(processes=len(config['Default']['Device']))
+    pool.map_async(smap, monitor_funcs)
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
     tcpdump_cmd = f"sudo tcpdump {tcpdump_opt}"
     execute_all([tcpdump_cmd, exec_cmd])
@@ -95,5 +117,8 @@ if __name__ == '__main__':
         main()
     except BaseException as e:
         print(e)
+        if pool!= None:
+            pool.close()
+            pool.join()
         for i in process_list:
             i.terminate()

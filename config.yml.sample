@@ -4,6 +4,7 @@ Default:
   ServerAddr: "xxx.xxx.xxx.xxx"
   ServerPort: ["5201"]
   LogDir: logs/measurement
+  Device: []
   TcpDump:
     Interface: [] # Flag is -i, if empty means any
     File_size: 500 # Flag is -C, default 500 MBytes
