@@ -98,8 +98,8 @@ def main():
             
     # Mobileinsight setup
     monitor_funcs = []
-    with open("device_to_serial.json", 'r') as f:
-        device_to_serial = json.load(f)
+    with open("device_setting.json", 'r') as f:
+        device_to_serial = json.load(f)["device_to_serial"]
         for i in config['Default']['Device']:
             ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[i]}-if00-port0")
             monitor_funcs.append(MyMonitor(ser, 9600, f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log").run_monitor)
