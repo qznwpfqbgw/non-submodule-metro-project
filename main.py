@@ -74,7 +74,6 @@ def main():
     # Tcpdump setup
     tcpdump_cmds = []
     for i in config["Default"]["TcpDump"]:
-        print(i)
         tcpdump_opt = ""
         tcpdump_opt += f"-i {i['Interface']} "
         tcpdump_opt += f"port {i['Port']} "
