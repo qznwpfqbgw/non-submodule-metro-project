@@ -1,14 +1,21 @@
 Default:
   Type: "TCPv1" # This will match the key of Config
-  Mode: "s" # s: server c: client
-  ServerAddr: "xxx.xxx.xxx.xxx"
-  ServerPort: ["5201"]
-  LogDir: logs/
-  Device: []
+  Mode: "s" # s: server c: client the server side won't 
+  LogDir: logs
+  Device: [] # For mobileInsight
   TcpDump:
-    Interface: [] # Flag is -i, if empty means any
-    File_size: 500 # Flag is -C, default 500 MBytes
-    # TODO: more options?
+    - Interface: enp4s0 # -i 
+      Port: "1234" # port
+      FileSize: "500" # -C
+      # Other:
+      #   Flag:
+      #   Value:
+    - Interface: eth0 # -i 
+      Port: "'(1234 or 2468)'" # port
+      FileSize: "500" # -C
+      # Other:
+      #   Flag:
+      #   Value:
 
 TCPv1:
   Entry: "iperf3" # Executable binary file or command
@@ -20,4 +27,3 @@ TCPv1:
     Value: "127.0.0.1"
   LogDir:
     Flag: --logfile
-

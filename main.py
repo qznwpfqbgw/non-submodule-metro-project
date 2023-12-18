@@ -58,8 +58,6 @@ def main():
     exec_entry = config[expr_type]["Entry"]
     log_file_name = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
-    tcpdump_log_file = log_dir + f"tcpdump/{expr_type}-{log_file_name}.pcap"
-    mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
     
     # Experiment setup
     for k, v in config[expr_type].items():
@@ -74,30 +72,21 @@ def main():
                 opt += f"{v['Value']} "
                 
     # Tcpdump setup
-    tcpdump_opt += "port '("
-    for idx, port in enumerate(config["Default"]["ServerPort"]):
-        if idx != 0:
-            tcpdump_opt += f"or {port} "
-        else:
-            tcpdump_opt += f"{port} "
-    tcpdump_opt += ")' "
-    
-    tcpdump_opt += f"-w {tcpdump_log_file} "
-    
-    for k, v in config["Default"]["TcpDump"].items():
-        if k == "Interface":
-            if len(v) == 0:
-                tcpdump_opt += f'-i any '
-            else:
-                for i in v:
-                    tcpdump_opt += f'-i {i} '
-        # Split the logfile
-        if k == "File_size":
-            tcpdump_opt += f'-C {v} '
+    tcpdump_cmds = []
+    for i in config["Default"]["TcpDump"]:
+        print(i)
+        tcpdump_opt = ""
+        tcpdump_opt += f"-i {i['Interface']} "
+        tcpdump_opt += f"port {i['Port']} "
+        tcpdump_opt += f"-C {i['FileSize']} "
+        tcpdump_log_file = log_dir + f"tcpdump/{expr_type}-{i['Interface']}-{i['Port']}-{log_file_name}.pcap"
+        tcpdump_opt += f"-w {tcpdump_log_file} "
+        tcpdump_cmds.append(f"sudo tcpdump {tcpdump_opt}")
     
     # # Mobileinsight setup
     if config['Default']['Mode'] == 'c':
         from mobileinsight.my_monitor import MyMonitor
+        mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
         monitor_funcs = []
         with open("device_setting.json", 'r') as f:
             device_to_serial = json.load(f)["device_to_serial"]
@@ -109,8 +98,7 @@ def main():
         pool.map_async(smap, monitor_funcs)
         
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
-    tcpdump_cmd = f"sudo tcpdump {tcpdump_opt}"
-    execute_all([tcpdump_cmd, exec_cmd])
+    execute_all(tcpdump_cmds + [exec_cmd])
     
     while True:
         time.sleep(1)
