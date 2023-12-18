@@ -6,7 +6,6 @@ import subprocess
 import os
 import signal
 import json
-from mobileinsight.my_monitor import MyMonitor
 import multiprocessing
 
 process_list = []
@@ -21,7 +20,7 @@ def signal_handler(signum, frame):
         pool.terminate()
     for i in process_list:
         i.terminate()
-    exit(0)  
+    os._exit(0)  
 
 def create_log_dir(config):
     global log_dir
@@ -37,7 +36,7 @@ def create_log_dir(config):
 def execute_all(cmds: list):
     for cmd in cmds:
         print(cmd)
-        process_list.append(subprocess.Popen([cmd], shell=True, preexec_fn=os.setpgrp))
+        process_list.append(subprocess.Popen(f"exec {cmd}", shell=True, preexec_fn=os.setpgrp))
         
 def smap(f):
     return f()
@@ -95,17 +94,20 @@ def main():
         # Split the logfile
         if k == "File_size":
             tcpdump_opt += f'-C {v} '
-            
-    # Mobileinsight setup
-    monitor_funcs = []
-    with open("device_setting.json", 'r') as f:
-        device_to_serial = json.load(f)["device_to_serial"]
-        for i in config['Default']['Device']:
-            ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[i]}-if00-port0")
-            monitor_funcs.append(MyMonitor(ser, 9600, f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log").run_monitor)
     
-    pool = multiprocessing.Pool(processes=len(config['Default']['Device']))
-    pool.map_async(smap, monitor_funcs)
+    # # Mobileinsight setup
+    if config['Default']['Mode'] == 'c':
+        from mobileinsight.my_monitor import MyMonitor
+        monitor_funcs = []
+        with open("device_setting.json", 'r') as f:
+            device_to_serial = json.load(f)["device_to_serial"]
+            for i in config['Default']['Device']:
+                ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[i]}-if00-port0")
+                monitor_funcs.append(MyMonitor(ser, 9600, f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log").run_monitor)
+        
+        pool = multiprocessing.Pool(processes=len(config['Default']['Device']))
+        pool.map_async(smap, monitor_funcs)
+        
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
     tcpdump_cmd = f"sudo tcpdump {tcpdump_opt}"
     execute_all([tcpdump_cmd, exec_cmd])

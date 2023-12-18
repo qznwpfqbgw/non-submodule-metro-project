@@ -3,7 +3,7 @@ Default:
   Mode: "s" # s: server c: client
   ServerAddr: "xxx.xxx.xxx.xxx"
   ServerPort: ["5201"]
-  LogDir: logs/measurement
+  LogDir: logs/
   Device: []
   TcpDump:
     Interface: [] # Flag is -i, if empty means any
