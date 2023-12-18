@@ -82,7 +82,7 @@ def main():
         tcpdump_opt += f"-w {tcpdump_log_file} "
         tcpdump_cmds.append(f"sudo tcpdump {tcpdump_opt}")
     
-    # # Mobileinsight setup
+    # Mobileinsight setup
     if config['Default']['Mode'] == 'c':
         from mobileinsight.my_monitor import MyMonitor
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"

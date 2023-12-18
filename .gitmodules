@@ -1,3 +1,6 @@
 [submodule "udp"]
 	path = udp
 	url = git@github.com:wmnlab-moxa/udp-experiment.git
+[submodule "mobileinsight"]
+	path = mobileinsight
+	url = git@github.com:wmnlab-moxa/mobileinsight-lib.git
