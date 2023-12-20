@@ -7,13 +7,14 @@ import os
 import signal
 import json
 import multiprocessing
+import pathlib
 
 process_list = []
 log_dir = ""
 pool = None
 
 def signal_handler(signum, frame):
-    global pool
+    global pool, process_list
     print("Signal: ",signum)
     if pool!= None:
         # pool.close()
@@ -24,7 +25,7 @@ def signal_handler(signum, frame):
 
 def create_log_dir(config):
     global log_dir
-    log_dir = f"./{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/measurement/"
+    log_dir = f"{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/measurement/"
     print(f"Log dir is {log_dir}")
     if not os.path.exists(log_dir):
         os.umask(0)
@@ -34,6 +35,7 @@ def create_log_dir(config):
 
 
 def execute_all(cmds: list):
+    global process_list
     for cmd in cmds:
         print(cmd)
         process_list.append(subprocess.Popen(f"exec {cmd}", shell=True, preexec_fn=os.setpgrp))
@@ -42,10 +44,10 @@ def smap(f):
     return f()
 
 def main():
-    global pool
+    global pool, process_list
     
     # Load config
-    with open("./config.yml", "r") as f:
+    with open(str(pathlib.Path(__file__).parent.resolve()) + "/config.yml", "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
     
