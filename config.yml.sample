@@ -27,3 +27,42 @@ TCPv1:
     Value: "127.0.0.1"
   LogDir:
     Flag: --logfile
+
+UDPServer:
+  Entry: "python3 udp/server.py"
+  Bitrate:
+    Flag: -b
+    Value: 1k
+  Length:
+    Flag: -l
+    Value: 250
+  Mode:
+    Flag: -s
+    Value: "0.0.0.0"
+  Device:
+    Flag: -d
+    Value: "qc00"
+  Port:
+    Flag: -p
+    Value: 3270
+
+UDPClient:
+  Entry: "python3 udp/client.py"
+  Bitrate:
+    Flag: -b
+    Value: 1k
+  Length:
+    Flag: -l
+    Value: 250
+  Mode:
+    Flag: -H
+    Value: "140.112.20.183"
+  Device:
+    Flag: -d
+    Value: "qc00"
+  Port:
+    Flag: -p
+    Value: 3270
+  SyncFile:
+    Flag: -w
+    Value: ./logs

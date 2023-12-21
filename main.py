@@ -68,6 +68,9 @@ def main():
         
         if k == "LogDir":
             log_opt += f"{v['Flag']} {log_file} "
+        elif k == "SyncFile":
+            sync_file_name = log_dir + f"sync/timesync-{log_file_name}.json"
+            opt += f"{v['Flag']} {sync_file_name}"
         else:
             opt += f"{v['Flag']} "
             if "Value" in v:
