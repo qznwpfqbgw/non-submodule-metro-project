@@ -12,26 +12,38 @@ import pathlib
 process_list = []
 log_dir = ""
 pool = None
+start = None
+config = None
 
 def signal_handler(signum, frame):
-    global pool, process_list
+    global pool, process_list, start, config
     print("Signal: ",signum)
     if pool!= None:
         # pool.close()
         pool.terminate()
     for i in process_list:
         i.terminate()
+    end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    config['Time']['start'] = start
+    config['Time']['end'] = end
+    with open(f"{log_dir}info", "w") as outfile: 
+        json.dump(config, outfile)
     os._exit(0)  
 
 def create_log_dir(config):
     global log_dir
     log_dir = f"{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/measurement/"
     print(f"Log dir is {log_dir}")
-    if not os.path.exists(log_dir):
-        os.umask(0)
-        os.makedirs(log_dir + "expr")
-        os.makedirs(log_dir + "tcpdump")
-        os.makedirs(log_dir + "mobileinsight")
+    i = 0
+    for i in range(100):
+        if os.path.exists(log_dir+f'{i}/'):
+            continue
+        if not os.path.exists(log_dir+f'{i}/'):
+            log_dir = log_dir+f'{i}/'
+            os.umask(0)
+            os.makedirs(log_dir + "expr")
+            os.makedirs(log_dir + "tcpdump")
+            os.makedirs(log_dir + "mobileinsight")
 
 
 def execute_all(cmds: list):
@@ -44,13 +56,13 @@ def smap(f):
     return f()
 
 def main():
-    global pool, process_list
+    global pool, process_list, start, config
     
     # Load config
     with open(str(pathlib.Path(__file__).parent.resolve()) + "/config.yml", "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
-    
+    start = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     
     opt = ""
     log_opt = ""
@@ -58,7 +70,7 @@ def main():
     tcpdump_opt = ""
     expr_type = config["Default"]["Type"]
     exec_entry = config[expr_type]["Entry"]
-    log_file_name = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    log_file_name = start
     log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
     
     # Experiment setup
