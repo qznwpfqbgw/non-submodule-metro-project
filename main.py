@@ -132,3 +132,8 @@ if __name__ == '__main__':
             pool.terminate()
         for i in process_list:
             i.terminate()
+        end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        config['Time']['start'] = start
+        config['Time']['end'] = end
+        with open(f"{log_dir}info", "w") as outfile: 
+            json.dump(config, outfile)
