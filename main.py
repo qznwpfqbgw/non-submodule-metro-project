@@ -15,19 +15,24 @@ pool = None
 start = None
 config = None
 
+def generateReport():
+    global start, config
+    end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    config['Time'] = {}
+    config['Time']['start'] = start
+    config['Time']['end'] = end
+    with open(f"{log_dir}info.json", "w") as outfile: 
+        json.dump(config, outfile)
+
 def signal_handler(signum, frame):
-    global pool, process_list, start, config
+    global pool, process_list
     print("Signal: ",signum)
     if pool!= None:
         # pool.close()
         pool.terminate()
     for i in process_list:
         i.terminate()
-    end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    config['Time']['start'] = start
-    config['Time']['end'] = end
-    with open(f"{log_dir}info", "w") as outfile: 
-        json.dump(config, outfile)
+    generateReport()
     os._exit(0)  
 
 def create_log_dir(config):
@@ -44,6 +49,7 @@ def create_log_dir(config):
             os.makedirs(log_dir + "expr")
             os.makedirs(log_dir + "tcpdump")
             os.makedirs(log_dir + "mobileinsight")
+            break
 
 
 def execute_all(cmds: list):
@@ -52,8 +58,6 @@ def execute_all(cmds: list):
         print(cmd)
         process_list.append(subprocess.Popen(f"exec {cmd}", shell=True, preexec_fn=os.setpgrp))
         
-def smap(f):
-    return f()
 
 def main():
     global pool, process_list, start, config
@@ -101,6 +105,8 @@ def main():
     
     # Mobileinsight setup
     if config['Default']['Mode'] == 'c':
+        def smap(f):
+            return f()
         from mobileinsight.my_monitor import MyMonitor
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
         monitor_funcs = []
@@ -128,12 +134,4 @@ if __name__ == '__main__':
         main()
     except BaseException as e:
         print(e)
-        if pool!= None:
-            pool.terminate()
-        for i in process_list:
-            i.terminate()
-        end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-        config['Time']['start'] = start
-        config['Time']['end'] = end
-        with open(f"{log_dir}info", "w") as outfile: 
-            json.dump(config, outfile)
+        signal_handler(0, 0)
