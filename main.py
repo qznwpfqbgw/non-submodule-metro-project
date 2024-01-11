@@ -17,10 +17,10 @@ config = None
 
 def generateReport():
     global start, config
-    end = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    end = dt.datetime.now()
     config['Time'] = {}
-    config['Time']['start'] = start
-    config['Time']['end'] = end
+    config['Time']['start'] = str(start)
+    config['Time']['end'] = str(end)
     with open(f"{log_dir}info.json", "w") as outfile: 
         json.dump(config, outfile)
 
@@ -66,7 +66,7 @@ def main():
     with open(str(pathlib.Path(__file__).parent.resolve()) + "/config.yml", "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
-    start = dt.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    start = dt.datetime.now()
     
     opt = ""
     log_opt = ""
@@ -74,7 +74,7 @@ def main():
     tcpdump_opt = ""
     expr_type = config["Default"]["Type"]
     exec_entry = config[expr_type]["Entry"]
-    log_file_name = start
+    log_file_name = start.strftime('%Y-%m-%d-%H-%M-%S')
     log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
     
     # Experiment setup
