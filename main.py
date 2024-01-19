@@ -74,6 +74,7 @@ def main():
     tcpdump_opt = ""
     expr_type = config["Default"]["Type"]
     exec_entry = config[expr_type]["Entry"]
+    mobileinsight_cmds = []
     log_file_name = start.strftime('%Y-%m-%d-%H-%M-%S')
     log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
     
@@ -105,22 +106,14 @@ def main():
     
     # Mobileinsight setup
     if config['Default']['Mode'] == 'c':
-        def smap(f):
-            return f()
-        from mobileinsight.my_monitor import MyMonitor
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
-        monitor_funcs = []
-        with open("device_setting.json", 'r') as f:
-            device_to_serial = json.load(f)["device_to_serial"]
-            for i in config['Default']['Device']:
-                ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[i]}-if00-port0")
-                monitor_funcs.append(MyMonitor(ser, 9600, f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log").run_monitor)
-        
-        pool = multiprocessing.Pool(processes=len(config['Default']['Device']))
-        pool.map_async(smap, monitor_funcs)
+        for i in config['Default']['Device']:
+            mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
+            mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
+            mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
         
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
-    execute_all(tcpdump_cmds + [exec_cmd])
+    execute_all(tcpdump_cmds + [exec_cmd] + mobileinsight_cmds)
     
     while True:
         time.sleep(1)
