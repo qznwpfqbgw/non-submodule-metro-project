@@ -6,8 +6,12 @@ import subprocess
 import os
 import signal
 import json
-import multiprocessing
+import argparse
 import pathlib
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--config", type=str, help="config file", default="config.yml") 
+args = parser.parse_args()
 
 process_list = []
 log_dir = ""
@@ -63,7 +67,7 @@ def main():
     global pool, process_list, start, config
     
     # Load config
-    with open(str(pathlib.Path(__file__).parent.resolve()) + "/config.yml", "r") as f:
+    with open(args.config, "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
     start = dt.datetime.now()
@@ -105,12 +109,11 @@ def main():
         tcpdump_cmds.append(f"sudo tcpdump {tcpdump_opt}")
     
     # Mobileinsight setup
-    if config['Default']['Mode'] == 'c':
+    mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
+    for i in config['Default']['Device']:
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
-        for i in config['Default']['Device']:
-            mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
-            mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
-            mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
+        mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
+        mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
         
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
     execute_all(tcpdump_cmds + [exec_cmd] + mobileinsight_cmds)
