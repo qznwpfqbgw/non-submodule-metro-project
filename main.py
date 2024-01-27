@@ -49,6 +49,7 @@ def create_log_dir(config):
             os.makedirs(log_dir + "expr")
             os.makedirs(log_dir + "tcpdump")
             os.makedirs(log_dir + "mobileinsight")
+            os.makedirs(log_dir + "mobileinsight/decode")
             break
 
 
@@ -106,11 +107,13 @@ def main():
     
     # Mobileinsight setup
     if config['Default']['Mode'] == 'c':
-        mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
         for i in config['Default']['Device']:
             mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
+            mobileinsight_decoded_log = log_dir + f"mobileinsight/decode/"
+            mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
             mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
-            mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
+            mobileinsight_decoded_log = f"{mobileinsight_decoded_log}{i}-{log_file_name}.log"
+            mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file} -dp {mobileinsight_decoded_log}")
         
     exec_cmd = f"{exec_entry} {opt}{log_opt}"
     execute_all(tcpdump_cmds + [exec_cmd] + mobileinsight_cmds)
@@ -126,5 +129,6 @@ if __name__ == '__main__':
         signal.signal(signal.SIGTSTP, signal_handler)
         main()
     except BaseException as e:
+        print("e")
         print(e)
         signal_handler(0, 0)
