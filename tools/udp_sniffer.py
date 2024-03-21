@@ -8,13 +8,10 @@ import argparse
 PACKET_SIZE = 250
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--device",
-    help="net_interface")
-parser.add_argument("-L", "--localport",
-    help="comma-separated list of local ports to trace.")
-parser.add_argument("-D", "--remoteport",
-    help="comma-separated list of remote ports to trace.")
-
+parser.add_argument("-i", "--device",help="net_interface")
+parser.add_argument("-p", "--ports",
+    help="comma-separated list of ports to trace.")
+args = parser.parse_args()
 
 bpf_text = """
 
@@ -69,8 +66,7 @@ int packet_monitor(struct __sk_buff *skb) {
         saddr = ip -> src;
         daddr = ip -> dst;
         int len = payload_length;
-        FILTER_DPORT
-        FILTER_SPORT
+        FILTER_PORT
         skb_events.perf_submit_skb(skb, skb->len, &len, sizeof(len));
     }
     
@@ -96,24 +92,19 @@ import ctypes
 from datetime import datetime
 from struct import unpack
 
-if args.remoteport:
-    dports = [int(dport) for dport in args.remoteport.split(',')]
-    dports_if = ' && '.join(['dport != %d' % dport for dport in dports])
-    bpf_text = bpf_text.replace('FILTER_DPORT',
+if args.ports:
+    dports = [int(port) for port in args.ports.split(',')]
+    dports_if = ' && '.join([f'dport != {port} && sport != {port}' for port in dports])
+    bpf_text = bpf_text.replace('FILTER_PORT',
         'if (%s) { goto KEEP; }' % dports_if)
-if args.localport:
-    lports = [int(lport) for lport in args.localport.split(',')]
-    lports_if = ' && '.join(['lport != %d' % lport for lport in lports])
-    bpf_text = bpf_text.replace('FILTER_SPORT',
-        'if (%s) { goto KEEP; }' % lports_if)
-
-OUTPUT_INTERVAL = 1
+else:
+    bpf_text = bpf_text.replace('FILTER_PORT',"")
 
 bpf = BPF(text=bpf_text)
 
 function_skb_matching = bpf.load_func("packet_monitor", BPF.SOCKET_FILTER)
 
-BPF.attach_raw_socket(function_skb_matching, parser.net_interface)
+BPF.attach_raw_socket(function_skb_matching, args.device)
 
 def payload_info(cpu, data, size):
     class SkbEvent(ct.Structure):
