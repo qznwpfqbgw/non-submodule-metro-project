@@ -15,7 +15,6 @@ args = parser.parse_args()
 
 process_list = []
 log_dir = ""
-pool = None
 start = None
 config = None
 
@@ -26,14 +25,11 @@ def generateReport():
     config['Time']['start'] = str(start)
     config['Time']['end'] = str(end)
     with open(f"{log_dir}info.json", "w") as outfile: 
-        json.dump(config, outfile)
+        yaml.dump(config, outfile, default_flow_style=False, sort_keys=False)
 
 def signal_handler(signum, frame):
-    global pool, process_list
+    global process_list
     print("Signal: ",signum)
-    if pool!= None:
-        # pool.close()
-        pool.terminate()
     for i in process_list:
         i.terminate()
     generateReport()
@@ -64,7 +60,7 @@ def execute_all(cmds: list):
         
 
 def main():
-    global pool, process_list, start, config
+    global process_list, start, config
     
     # Load config
     with open(args.config, "r") as f:
@@ -103,27 +99,38 @@ def main():
                 
     # Tcpdump setup
     tcpdump_cmds = []
-    for i in config["Default"]["TcpDump"]:
+    for tcpdump_config in config["Default"]["TcpDump"]:
         tcpdump_opt = ""
-        tcpdump_opt += f"-i {i['Interface']} "
-        tcpdump_opt += f"port {i['Port']} "
-        tcpdump_opt += f"-C {i['FileSize']} "
-        tcpdump_log_file = log_dir + f"tcpdump/{expr_type}-{i['Interface']}-{i['Port']}-{log_file_name}.pcap"
-        tcpdump_opt += f"-w {tcpdump_log_file} "
-        tcpdump_cmds.append(f"sudo tcpdump {tcpdump_opt}")
+        name = ""
+        for k, v in tcpdump_config.items():
+            tcpdump_opt += f"{v['Flag']} "
+            name += f"{v['Flag']}-"
+            if "Value" in v:
+                tcpdump_opt += f"{v['Value']} "
+                name += f"{v['Value']}-"
+        tcpdump_log_path = log_dir + f'tcpdump/{expr_type}-{name}{log_file_name}.pcap'
+        tcpdump_cmds.append(f"sudo tcpdump {tcpdump_opt} -w {tcpdump_log_path}")
     
     # Mobileinsight setup
     mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
     for i in config['Default']['Device']:
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
         mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
-        mobileinsight_cmds.append(f"sudo python3 mobileinsight/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
+        mobileinsight_cmds.append(f"sudo python3 tools/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
         
     
     execute_all(tcpdump_cmds + exec_cmds + mobileinsight_cmds)
-    
-    while True:
-        time.sleep(1)
+    if config['Default']['Poll']['Enable']:
+        while True:
+            for p in process_list:
+                status = p.poll()
+                if status != None:
+                    print("process stop by command: ",p.args)
+                    signal_handler(status, 0)
+            time.sleep(config['Default']['Poll']['Interval'])
+    else:
+        while True:
+            time.sleep(60)
 
 
 if __name__ == '__main__':
