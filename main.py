@@ -5,9 +5,9 @@ import datetime as dt
 import subprocess
 import os
 import signal
-import json
 import argparse
 import pathlib
+import shutil
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", type=str, help="config file", default="config.yml") 
@@ -17,6 +17,7 @@ process_list = []
 log_dir = ""
 start = None
 config = None
+targetFile = None
 
 def generateReport():
     global start, config
@@ -24,14 +25,16 @@ def generateReport():
     config['Time'] = {}
     config['Time']['start'] = str(start)
     config['Time']['end'] = str(end)
-    with open(f"{log_dir}info.json", "w") as outfile: 
+    with open(f"{log_dir}info.yml", "w") as outfile: 
         yaml.dump(config, outfile, default_flow_style=False, sort_keys=False)
 
 def signal_handler(signum, frame):
-    global process_list
+    global process_list, targetFile
     print("Signal: ",signum)
     for i in process_list:
         i.terminate()
+    if targetFile!=None:
+        os.remove(targetFile)
     generateReport()
     os._exit(0)  
 
@@ -60,7 +63,7 @@ def execute_all(cmds: list):
         
 
 def main():
-    global process_list, start, config
+    global process_list, start, config, targetFile
     
     # Load config
     with open(args.config, "r") as f:
@@ -74,6 +77,14 @@ def main():
     log_file_name = start.strftime('%Y-%m-%d-%H-%M-%S')
     expr_log_dir = log_dir + f"expr/"
     
+    if config["Default"]["Upload"]['Enable']:
+        targetDate = (
+            (dt.date.today() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
+            if config["Default"]["Upload"]["Date"] == ""
+            else config["Default"]["Upload"]["Date"]
+        )
+        targetFile = shutil.make_archive(f'{targetDate}', format='zip', root_dir= f"{config['Default']['LogDir']}/{targetDate}/")
+        
     # Experiment setup
     for expr_type in config["Default"]["Type"]:
         opt = ""
@@ -90,6 +101,9 @@ def main():
             elif k == "SyncFile":
                 sync_file_name = expr_log_dir + f"sync/timesync-{log_file_name}.json"
                 opt += f"{v['Flag']} {sync_file_name} "
+            elif k == "Upload" :
+                if targetFile != None:
+                    opt += f"{v['Flag']} {targetFile}"
             else:
                 opt += f"{v['Flag']} "
                 if "Value" in v:
