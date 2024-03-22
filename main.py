@@ -116,7 +116,8 @@ def main():
     for i in config['Default']['Device']:
         mobileinsight_log_file = log_dir + f"mobileinsight/{expr_type}"
         mobileinsight_log_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.mi2log"
-        mobileinsight_cmds.append(f"sudo python3 tools/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file}")
+        mobileinsight_decoded_file = f"{mobileinsight_log_file}-{i}-{log_file_name}.log"
+        mobileinsight_cmds.append(f"sudo python3 tools/monitor.py -d {i} -b 9600 -f {mobileinsight_log_file} -dp {mobileinsight_decoded_file}")
         
     
     execute_all(tcpdump_cmds + exec_cmds + mobileinsight_cmds)
