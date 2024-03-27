@@ -8,9 +8,10 @@ import argparse
 PACKET_SIZE = 250
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-i", "--device",help="net_interface")
+parser.add_argument("-i", "--device", help="net_interface")
 parser.add_argument("-p", "--ports",
     help="comma-separated list of ports to trace.")
+parser.add_argument("-w", "--file", help="output file")
 args = parser.parse_args()
 
 bpf_text = """
@@ -27,8 +28,9 @@ bpf_text = """
 
 BPF_PERF_OUTPUT(skb_events);
  
-struct payload {
+struct perf_data {
     int len;
+    int dir;
 };
 
 int packet_monitor(struct __sk_buff *skb) {
@@ -67,7 +69,8 @@ int packet_monitor(struct __sk_buff *skb) {
         daddr = ip -> dst;
         int len = payload_length;
         FILTER_PORT
-        skb_events.perf_submit_skb(skb, skb->len, &len, sizeof(len));
+        struct perf_data data = {.len = len, .dir = skb->ingress_ifindex};
+        skb_events.perf_submit_skb(skb, skb->len, &data, sizeof(data));
     }
     
 /* keep the packet and send it to userspace returning -1 */
@@ -92,6 +95,9 @@ import ctypes
 from datetime import datetime
 from struct import unpack
 
+out = sys.stdout
+if args.file:
+    out = open(args.file,"w+")
 if args.ports:
     dports = [int(port) for port in args.ports.split(',')]
     dports_if = ' && '.join([f'dport != {port} && sport != {port}' for port in dports])
@@ -110,7 +116,8 @@ def payload_info(cpu, data, size):
     class SkbEvent(ct.Structure):
         _fields_ = [
             ("len", ct.c_uint32),
-            ("raw", ct.c_ubyte * (size - ct.sizeof(ct.c_uint32)))
+            ("dir", ct.c_uint32),
+            ("raw", ct.c_ubyte * (size - 2*ct.sizeof(ct.c_uint32))),
         ]
     try:
         sk = ct.cast(data, ct.POINTER(SkbEvent)).contents
@@ -139,13 +146,13 @@ def payload_info(cpu, data, size):
             epoch = int.from_bytes(custom_header[8:12],"big")
             microseconds = int.from_bytes(custom_header[12:16],"big")
             seq = int.from_bytes(custom_header[16:20],"big")
-            print(f"{ts},{saddr},{daddr},{sport},{dport},{seq},{epoch},{microseconds},")
+            dir = sk.dir
+            print(f"{ts},{saddr},{daddr},{sport},{dport},{seq},{epoch},{microseconds},{dir},",file=out)
     except ValueError:
         return "Invalid input"
-
 try:
     bpf["skb_events"].open_perf_buffer(payload_info)
-    print("timestamp,saddr,daddr,sport,dport,sequence,epoch,microseconds")
+    print("timestamp,saddr,daddr,sport,dport,sequence,epoch,microseconds,direction",file=out)
     while True :
         bpf.perf_buffer_poll()
         
