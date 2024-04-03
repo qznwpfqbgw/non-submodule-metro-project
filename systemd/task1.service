@@ -1,0 +1,12 @@
+# task1.service
+[Unit]
+Description= 運行 task1.service 任務
+Conflicts= task1.timer
+
+[Service]
+Type= simple
+ExecStart= /path/to/main.py -c config1.yml
+ExecStop= /bin/kill -2 $MAINPID
+
+[Install]
+WantedBy= multi-user.targe
