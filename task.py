@@ -1,6 +1,7 @@
 import subprocess
 from subprocess import Popen
 import os
+import time
 
 class Task:
     def __init__(self, cmd, expr_type):
@@ -17,8 +18,12 @@ class Task:
     
     def terminate(self):
         self.__process.terminate()
-        if self.get_status() == None:
+        time.sleep(1)
+        while self.get_status() == None:
             self.__process.kill()
+            time.sleep(1)
+            self.__process.terminate()
+            time.sleep(1)
 
     def get_expr_type(self):
         return self.__expr_type
