@@ -3,8 +3,8 @@
 Description= 在某時間段中每分鐘都執行 task2.service
 
 [Timer]
-OnCalendar= *-*-* 17..19:*:00
+OnCalendar= *-*-* 20..23:*:0/10
 Unit= task2.service
 
 [Install]
-WantedBy= basic.target
+WantedBy=multi-user.targe

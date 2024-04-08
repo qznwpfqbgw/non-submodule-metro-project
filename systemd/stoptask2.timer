@@ -2,7 +2,7 @@
 [Unit]
 Description= 在某時間停止 task2.service
 [Timer]
-OnCalendar= *-*-* 19:05:00
+OnCalendar= *-*-* 22:42:00
 Unit= stoptask2.service
 [Install]
-WantedBy= basic.target
+WantedBy= timers.target

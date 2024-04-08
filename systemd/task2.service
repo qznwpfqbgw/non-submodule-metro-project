@@ -1,12 +1,13 @@
 # task2.service
 [Unit]
 Description= 運行 task2.service 任務
-Conflicts= task2.timer
+StartLimitIntervalSec=0
 
 [Service]
+User=root
 Type= simple
-ExecStart= /path/to/main.py -c config1.yml
-ExecStop= /bin/kill -2 $MAINPID
+WorkingDirectory = /path/to/dir
+ExecStart = main.py -c config2.yml
 
 [Install]
 WantedBy= multi-user.targe
