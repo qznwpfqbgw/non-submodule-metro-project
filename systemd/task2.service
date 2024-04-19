@@ -1,0 +1,13 @@
+# task2.service
+[Unit]
+Description= 運行 task2.service 任務
+StartLimitIntervalSec=0
+
+[Service]
+User=root
+Type= simple
+WorkingDirectory = /path/to/dir
+ExecStart = main.py -c config2.yml
+
+[Install]
+WantedBy= multi-user.targe

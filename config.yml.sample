@@ -1,38 +1,77 @@
 Default:
-  Type: "TCPv1" # This will match the key of Config
+  Type: ["TCP_CLIENT"] # This will match the key of Config
   Mode: "s" # s: server c: client the server side won't 
+  # LogDir: /home/wmnlab/github_code/Metro/Metro-Measurement/logs
   LogDir: logs
-  Device: [] # For mobileInsight
+  Device: []
+  Poll:
+    Enable: True
+    Interval: 1
+  Upload:
+    Enable: True
+    Date: "" # If Date == "" means yesterday
   TcpDump:
-    - Interface: enp4s0 # -i 
-      Port: "1234" # port
-      FileSize: "500" # -C
-      # Other:
-      #   Flag:
-      #   Value:
-    - Interface: eth0 # -i 
-      Port: "'(1234 or 2468)'" # port
-      FileSize: "500" # -C
-      # Other:
-      #   Flag:
-      #   Value:
+    - Interface:
+        Flag: -i
+        Value: any
+      Port:
+        Flag: port
+        Value: "26425"
+      FileSize: 
+        Flag: -C
+        Value: 50 
 
 TCPv1:
   Entry: "iperf3" # Executable binary file or command
-  Bitrate:
-    Flag: -b
-    Value: 1M
+  Port:
+    Flag: -p
+    Value: 26425
   Mode:
-    Flag: -c
-    Value: "127.0.0.1"
+    Flag: -s
   LogDir:
     Flag: --logfile
+  Log:
+    Flag: --json
+
+TCPv2:
+  Entry: "iperf3" # Executable binary file or command
+  Port:
+    Flag: -p
+    Value: 26426
+  Mode:
+    Flag: -s
+  LogDir:
+    Flag: --logfile
+  Log:
+    Flag: --json
+
+TCP_SERVER:
+  Entry: "python3 tcp-upload/tcp.py" # executable binary file or command
+  Mode:
+    Flag: -s
+  Port:
+    Flag: -p
+    Value: 26440
+  Download:
+    Flag: -d
+    Value: download
+
+TCP_CLIENT:
+  Entry: "python3 tcp-upload/tcp.py" # executable binary file or command
+  Mode:
+    Flag: -c
+    Value: "140.112.20.183"
+  Port:
+    Flag: -p
+    Value: 26440
+  Upload:
+    Flag: --file
 
 UDPServer:
   Entry: "python3 udp/server.py"
   Bitrate:
     Flag: -b
-    Value: 1k
+    Value: 1M
   Length:
     Flag: -l
     Value: 250
@@ -41,10 +80,16 @@ UDPServer:
     Value: "0.0.0.0"
   Device:
     Flag: -d
-    Value: "qc00"
+    Value: "wwan0"
   Port:
     Flag: -p
-    Value: 3270
+    Value: '26430'
+  TimeSyncPort:
+    Flag: -tp
+    Value: 26438
+  ControlPort:
+    Flag: -cp
+    Value: 26439
 
 UDPClient:
   Entry: "python3 udp/client.py"
@@ -59,10 +104,17 @@ UDPClient:
     Value: "140.112.20.183"
   Device:
     Flag: -d
-    Value: "qc00"
+    Value: "qc00 qc01"
   Port:
     Flag: -p
-    Value: 3270
+    Value: '26430 26432'
   SyncFile:
     Flag: -w
     Value: ./logs
+  TimeSyncPort:
+    Flag: -tp
+    Value: 26438
+  ControlPort:
+    Flag: -cp
+    Value: 26439
+    

@@ -1,0 +1,8 @@
+# stoptask1.service
+[Unit]
+Description= 關閉 task1 服務
+Conflicts= task1.service
+
+[Service]
+Type= oneshot
+ExecStart= /bin/echo "Closing down task1.service"

@@ -1,6 +1,15 @@
 [submodule "udp"]
 	path = udp
-	url = git@github.com:wmnlab-moxa/udp-experiment.git
+	url = git@github.com:qznwpfqbgw/udp-experiment.git
 [submodule "mobileinsight"]
 	path = mobileinsight
-	url = git@github.com:wmnlab-moxa/mobileinsight-lib.git
+	url = git@github.com:qznwpfqbgw/mobileinsight-lib.git
+[submodule "Dynamic-Band-Locking"]
+	path = Dynamic-Band-Locking
+	url = git@github.com:qznwpfqbgw/Dynamic-Band-Locking.git
+[submodule "quic_upload"]
+	path = quic_upload
+	url = git@github.com:qznwpfqbgw/quic_upload.git
+[submodule "tcp-upload"]
+	path = tcp-upload
+	url = git@github.com:qznwpfqbgw/tcp-upload.git
