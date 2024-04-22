@@ -1,0 +1,8 @@
+# stoptask1.timer
+[Unit]
+Description= 在某時間停止 task1.service
+[Timer]
+OnCalendar= *-*-* 19:05:00
+Unit= stoptask1.service
+[Install]
+WantedBy= timers.target

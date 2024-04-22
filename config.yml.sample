@@ -1,0 +1,120 @@
+Default:
+  Type: ["TCP_CLIENT"] # This will match the key of Config
+  Mode: "s" # s: server c: client the server side won't 
+  # LogDir: /home/wmnlab/github_code/Metro/Metro-Measurement/logs
+  LogDir: logs
+  Device: []
+  Poll:
+    Enable: True
+    Interval: 1
+  Upload:
+    Enable: True
+    Date: "" # If Date == "" means yesterday
+  TcpDump:
+    - Interface:
+        Flag: -i
+        Value: any
+      Port:
+        Flag: port
+        Value: "26425"
+      FileSize: 
+        Flag: -C
+        Value: 50 
+
+TCPv1:
+  Entry: "iperf3" # Executable binary file or command
+  Port:
+    Flag: -p
+    Value: 26425
+  Mode:
+    Flag: -s
+  LogDir:
+    Flag: --logfile
+  Log:
+    Flag: --json
+
+TCPv2:
+  Entry: "iperf3" # Executable binary file or command
+  Port:
+    Flag: -p
+    Value: 26426
+  Mode:
+    Flag: -s
+  LogDir:
+    Flag: --logfile
+  Log:
+    Flag: --json
+
+TCP_SERVER:
+  Entry: "python3 tcp-upload/tcp.py" # executable binary file or command
+  Mode:
+    Flag: -s
+  Port:
+    Flag: -p
+    Value: 26440
+  Download:
+    Flag: -d
+    Value: download
+
+TCP_CLIENT:
+  Entry: "python3 tcp-upload/tcp.py" # executable binary file or command
+  Mode:
+    Flag: -c
+    Value: "140.112.20.183"
+  Port:
+    Flag: -p
+    Value: 26440
+  Upload:
+    Flag: --file
+
+UDPServer:
+  Entry: "python3 udp/server.py"
+  Bitrate:
+    Flag: -b
+    Value: 1M
+  Length:
+    Flag: -l
+    Value: 250
+  Mode:
+    Flag: -s
+    Value: "0.0.0.0"
+  Device:
+    Flag: -d
+    Value: "wwan0"
+  Port:
+    Flag: -p
+    Value: '26430'
+  TimeSyncPort:
+    Flag: -tp
+    Value: 26438
+  ControlPort:
+    Flag: -cp
+    Value: 26439
+
+UDPClient:
+  Entry: "python3 udp/client.py"
+  Bitrate:
+    Flag: -b
+    Value: 1k
+  Length:
+    Flag: -l
+    Value: 250
+  Mode:
+    Flag: -H
+    Value: "140.112.20.183"
+  Device:
+    Flag: -d
+    Value: "qc00 qc01"
+  Port:
+    Flag: -p
+    Value: '26430 26432'
+  SyncFile:
+    Flag: -w
+    Value: ./logs
+  TimeSyncPort:
+    Flag: -tp
+    Value: 26438
+  ControlPort:
+    Flag: -cp
+    Value: 26439
+    

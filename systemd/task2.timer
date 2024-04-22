@@ -1,0 +1,10 @@
+# task2.timer
+[Unit]
+Description= 在某時間段中每分鐘都執行 task2.service
+
+[Timer]
+OnCalendar= *-*-* 20..23:*:0/10
+Unit= task2.service
+
+[Install]
+WantedBy=multi-user.targe
