@@ -147,12 +147,12 @@ def payload_info(cpu, data, size):
             microseconds = int.from_bytes(custom_header[12:16],"big")
             seq = int.from_bytes(custom_header[16:20],"big")
             dir = sk.dir
-            print(f"{ts},{saddr},{daddr},{sport},{dport},{seq},{epoch},{microseconds},{dir},",file=out)
+            print(f"{ts},{saddr},{daddr},{sport},{dport},{seq},{epoch},{microseconds},{dir},",file=out,flush=True)
     except ValueError:
         return "Invalid input"
 try:
     bpf["skb_events"].open_perf_buffer(payload_info)
-    print("timestamp,saddr,daddr,sport,dport,sequence,epoch,microseconds,direction",file=out)
+    print("timestamp,saddr,daddr,sport,dport,sequence,epoch,microseconds,direction",file=out,flush=True)
     while True :
         bpf.perf_buffer_poll()
         
