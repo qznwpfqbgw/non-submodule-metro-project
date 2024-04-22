@@ -47,7 +47,7 @@ def signal_handler(signum, frame):
         i.terminate()
         if i.is_upload() and i.get_upload_target()!=None:
             os.remove(f"{target_date}_{i.get_upload_target()}.zip")
-            if i.get_status() == 1:
+            if i.get_status() == 0:
                 upload_config['pending'].remove(i.get_upload_target())
                 upload_config['uploaded'].append(i.get_upload_target())
     daily_config['pending'].append(expr_num)
