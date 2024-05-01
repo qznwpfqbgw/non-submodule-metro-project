@@ -8,44 +8,61 @@ import argparse
 import shutil
 from task import Task
 import traceback
+import threading
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", type=str, help="config file", default="config.yml") 
 args = parser.parse_args()
 
 task_list = []
+base_dir = ""
+upload_file_base_dir = ""
+upload_targets = []
 log_dir = ""
 start = None
-config = None
+config = {}
 targetFile = None
+expr_num = 0
+daily_config = {}
+upload_config = {}
+target_date = ""
 
 def generateReport():
-    global start, config
+    global start, config, base_dir, expr_num, daily_config, upload_config
     end = dt.datetime.now()
     config['Time'] = {}
     config['Time']['start'] = str(start)
     config['Time']['end'] = str(end)
     with open(f"{log_dir}info.yml", "w") as outfile: 
         yaml.dump(config, outfile, default_flow_style=False, sort_keys=False)
-
+    with open(f"{base_dir}info.yml", "w") as f:
+        yaml.dump(daily_config, f, default_flow_style=False, sort_keys=False)
+    with open(f"{upload_file_base_dir}info.yml", "w") as f:
+        yaml.dump(upload_config, f, default_flow_style=False, sort_keys=False)
+        
 def signal_handler(signum, frame):
-    global task_list, targetFile
+    global task_list, target_date, expr_num, daily_config
     print("Signal: ", signum)
     for i in task_list:
         i.terminate()
-    if targetFile!=None:
-        os.remove(targetFile)
+        if i.is_upload() and i.get_upload_target()!=None:
+            os.remove(f"{target_date}_{i.get_upload_target()}.zip")
+            if i.get_status() == 0:
+                upload_config['pending'].remove(i.get_upload_target())
+                upload_config['uploaded'].append(i.get_upload_target())
+    daily_config['pending'].append(expr_num)
     generateReport()
     os._exit(0)  
 
 def create_log_dir(config):
-    global log_dir
-    log_dir = f"{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/measurement/"
+    global log_dir, expr_num, base_dir
+    log_dir = f"{config['Default']['LogDir']}/{dt.date.today().strftime('%Y-%m-%d')}/"
+    base_dir = log_dir
     print(f"Log dir is {log_dir}")
-    i = 0
     for i in range(100):
         if os.path.exists(log_dir+f'{i}/'):
             continue
+        expr_num = i
         if not os.path.exists(log_dir+f'{i}/'):
             log_dir = log_dir+f'{i}/'
             os.umask(0)
@@ -62,14 +79,24 @@ def execute_all():
         task.start()
         time.sleep(1)
         
+def generateUploadFile(target, upload_file_base_dir, target_date):
+    targetFile = shutil.make_archive(f'{target}', format='zip', root_dir = upload_file_base_dir)
+    os.rename(targetFile, f"{target_date}_{target}.zip")
 
 def main():
-    global task_list, start, config, targetFile
+    global task_list, start, config, targetFile, base_dir, daily_config, upload_config, upload_file_base_dir, target_date
     
     # Load config
     with open(args.config, "r") as f:
         config = yaml.safe_load(f)
     create_log_dir(config)
+    if os.path.exists(f"{base_dir}info.yml"):
+        with open(f"{base_dir}info.yml", "r") as f:
+            daily_config = yaml.safe_load(f)
+    else:
+        daily_config['pending'] = []
+        daily_config['uploaded'] = []
+
     start = dt.datetime.now()
     
     tcpdump_opt = ""
@@ -77,40 +104,66 @@ def main():
     expr_log_dir = log_dir + f"expr/"
     
     if config["Default"]["Upload"]['Enable']:
-        targetDate = (
+        target_date = (
             (dt.date.today() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
             if config["Default"]["Upload"]["Date"] == ""
             else config["Default"]["Upload"]["Date"]
         )
-        targetFile = shutil.make_archive(f'{targetDate}', format='zip', root_dir= f"{config['Default']['LogDir']}/{targetDate}/")
+        upload_file_base_dir = config['Default']['LogDir'] + '/' + target_date + '/'
+        if dt.date.today().strftime("%Y-%m-%d") == target_date:
+            upload_config = daily_config
+        elif os.path.exists(f"{upload_file_base_dir}info.yml"):
+            with open(f"{upload_file_base_dir}info.yml", "r") as f:
+                upload_config = yaml.safe_load(f)
         
     # Experiment setup
+    i = 0
     for expr_type in config["Default"]["Type"]:
         opt = ""
         log_opt = ""
         exec_cmd = ""
         exec_entry = config[expr_type]["Entry"]
         log_file = log_dir + f"expr/{expr_type}-{log_file_name}.log"
+        isUpload = False
+        upload_target = None
         for k, v in config[expr_type].items():
             if type(v) != dict:
                 continue
-            
             if k == "LogDir":
                 log_opt += f"{v['Flag']} {log_file} "
             elif k == "SyncFile":
                 sync_file_name = expr_log_dir + f"sync/timesync-{log_file_name}.json"
                 opt += f"{v['Flag']} {sync_file_name} "
-            elif k == "Upload" :
-                if targetFile != None:
-                    opt += f"{v['Flag']} {targetFile}"
+            elif k == "Upload":
+                if upload_config != None and len(upload_config['pending']) > i:
+                    upload_target = upload_config['pending'][i]
+                    upload_targets.append(upload_target)
+                    opt += f"{v['Flag']} {target_date}_{upload_target}.zip"
+                    isUpload = True
+                    i += 1
+                else:
+                    continue
             else:
                 opt += f"{v['Flag']} "
                 if "Value" in v:
                     opt += f"{v['Value']} "
         exec_cmd = f"{exec_entry} {opt}{log_opt}"
-        task = Task(exec_cmd, expr_type)
+        task = Task(exec_cmd, expr_type, isUpload, upload_target)
         task_list.append(task)
-                
+
+    # Generate Upload file
+    thread_list = []
+    for target in upload_targets:
+        thread_list.append(threading.Thread(target=generateUploadFile,args=(target, upload_file_base_dir, target_date)))
+
+    # start
+    for t in thread_list:
+        t.start()
+    
+    # join
+    for t in thread_list:
+        t.join()
+
     # Tcpdump setup
     i = 0
     for tcpdump_config in config["Default"]["TcpDump"]:

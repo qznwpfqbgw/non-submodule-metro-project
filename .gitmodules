@@ -1,9 +1,6 @@
 [submodule "udp"]
 	path = udp
 	url = git@github.com:qznwpfqbgw/udp-experiment.git
-[submodule "mobileinsight"]
-	path = mobileinsight
-	url = git@github.com:qznwpfqbgw/mobileinsight-lib.git
 [submodule "Dynamic-Band-Locking"]
 	path = Dynamic-Band-Locking
 	url = git@github.com:qznwpfqbgw/Dynamic-Band-Locking.git
