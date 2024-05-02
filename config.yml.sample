@@ -1,6 +1,5 @@
 Default:
-  Type: ["UDPServer",UDP_SNIFFER] # This will match the key of Config
-  Mode: "s" # s: server c: client the server side won't 
+  Type: [UDPServer, UDP_SNIFFER] # This will match the key of Config
   # LogDir: /home/wmnlab/github_code/Metro/Metro-Measurement/logs
   LogDir: logs
   Device: []
@@ -26,18 +25,6 @@ TCPv1:
   Port:
     Flag: -p
     Value: 26424
-  Mode:
-    Flag: -s
-  LogDir:
-    Flag: --logfile
-  Log:
-    Flag: --json
-
-TCPv2:
-  Entry: "iperf3" # Executable binary file or command
-  Port:
-    Flag: -p
-    Value: 26426
   Mode:
     Flag: -s
   LogDir:
@@ -95,7 +82,7 @@ UDPClient:
   Entry: "python3 udp/client.py"
   Bitrate:
     Flag: -b
-    Value: 1k
+    Value: 1M
   Length:
     Flag: -l
     Value: 250
@@ -127,7 +114,7 @@ UDP_SNIFFER:
   Entry: "python3 tools/udp_sniffer.py"
   Device:
     Flag: -i
-    Value: wlp0s20f3
+    Value: qc01
   LogDir:
     Flag: --file
   Port:
