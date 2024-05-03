@@ -129,10 +129,9 @@ def main():
             if type(v) != dict:
                 continue
             if k == "LogDir":
-                log_opt += f"{v['Flag']} {log_file} "
-            elif k == "SyncFile":
-                sync_file_name = expr_log_dir + f"sync/timesync-{log_file_name}.json"
-                opt += f"{v['Flag']} {sync_file_name} "
+                log_opt += f"{v['Flag']} {log_dir} "
+            elif k == "LogFile":
+                opt += f"{v['Flag']} {log_file} "
             elif k == "Upload":
                 if upload_config != None and len(upload_config['pending']) > i:
                     upload_target = upload_config['pending'][i]
@@ -197,6 +196,7 @@ def main():
                     print("process stop by: ",t.get_expr_type())
                     signal_handler(t.get_status(), 0)
             time.sleep(config['Default']['Poll']['Interval'])
+            ## TODO: sudo sync
     else:
         while True:
             time.sleep(60)

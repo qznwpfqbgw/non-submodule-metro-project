@@ -1,6 +1,5 @@
 Default:
-  Type: ["TCP_CLIENT"] # This will match the key of Config
-  Mode: "s" # s: server c: client the server side won't 
+  Type: [UDPServer, UDP_SNIFFER] # This will match the key of Config
   # LogDir: /home/wmnlab/github_code/Metro/Metro-Measurement/logs
   LogDir: logs
   Device: []
@@ -8,7 +7,7 @@ Default:
     Enable: True
     Interval: 1
   Upload:
-    Enable: True
+    Enable: False
     Date: "" # If Date == "" means yesterday
   TcpDump:
     - Interface:
@@ -19,25 +18,13 @@ Default:
         Value: "26425"
       FileSize: 
         Flag: -C
-        Value: 50 
+        Value: 500
 
 TCPv1:
   Entry: "iperf3" # Executable binary file or command
   Port:
     Flag: -p
-    Value: 26425
-  Mode:
-    Flag: -s
-  LogDir:
-    Flag: --logfile
-  Log:
-    Flag: --json
-
-TCPv2:
-  Entry: "iperf3" # Executable binary file or command
-  Port:
-    Flag: -p
-    Value: 26426
+    Value: 26424
   Mode:
     Flag: -s
   LogDir:
@@ -80,10 +67,10 @@ UDPServer:
     Value: "0.0.0.0"
   Device:
     Flag: -d
-    Value: "wwan0"
+    Value: "qc01"
   Port:
     Flag: -p
-    Value: '26430'
+    Value: '26425'
   TimeSyncPort:
     Flag: -tp
     Value: 26438
@@ -95,7 +82,7 @@ UDPClient:
   Entry: "python3 udp/client.py"
   Bitrate:
     Flag: -b
-    Value: 1k
+    Value: 1M
   Length:
     Flag: -l
     Value: 250
@@ -117,4 +104,20 @@ UDPClient:
   ControlPort:
     Flag: -cp
     Value: 26439
-    
+
+Dynamic_bandlock:
+  Entry: "python3 Dynamic-Band-Locking/dynamic_bandlock/algorithm_v3.py"
+  Device:
+    Flag: qc00 qc01
+
+UDP_SNIFFER:
+  Entry: "python3 tools/udp_sniffer.py"
+  Device:
+    Flag: -i
+    Value: qc01
+  LogDir:
+    Flag: --file
+  Port:
+    Flag: -p
+    Value: 26425,26426
+  
