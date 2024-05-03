@@ -26,7 +26,7 @@ if __name__ == "__main__":
     parent_folder = os.path.dirname(script_folder)
     d2s_path = os.path.join(parent_folder, 'device_setting.json')
     with open(d2s_path, 'r') as f:
-        device_to_serial = json.load(f)["device_to_serial"]
+        device_to_serial = json.load(f)
         ser = device_to_serial[dev]
         ser = os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{ser}-if00-port0")
         monitor_funcs = []
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     dumper = MyMsgLogger()
     dumper.set_source(src)
     dumper.set_decoding(MyMsgLogger.XML) 
-    dumper.set_dump_type(MyMsgLogger.ALL)
+    dumper.set_dump_type(MyMsgLogger.FILE_ONLY)
     if args.decode_file is not None:
         dumper.save_decoded_msg_as(args.decode_file)
     # Start the monitoring

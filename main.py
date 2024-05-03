@@ -129,9 +129,9 @@ def main():
             if type(v) != dict:
                 continue
             if k == "LogDir":
-                log_opt += f"{v['Flag']} {log_dir} "
+                log_opt += f"{v['Flag']} {os.path.abspath(os.curdir) + '/' + log_dir} "
             elif k == "LogFile":
-                opt += f"{v['Flag']} {log_file} "
+                opt += f"{v['Flag']} {os.path.abspath(os.curdir) + '/' + log_file} "
             elif k == "Upload":
                 if upload_config != None and len(upload_config['pending']) > i:
                     upload_target = upload_config['pending'][i]
