@@ -19,7 +19,7 @@ base_dir = ""
 upload_file_base_dir = ""
 upload_targets = []
 log_dir = ""
-start = None
+start_time = None
 config = {}
 targetFile = None
 expr_num = 0
@@ -28,21 +28,20 @@ upload_config = {}
 target_date = ""
 
 def generateReport():
-    global start, config, base_dir, expr_num, daily_config, upload_config
-    end = dt.datetime.now()
+    global start_time, config, base_dir, expr_num, daily_config, upload_config
+    end_time = dt.datetime.now()
     config['Time'] = {}
-    config['Time']['start'] = str(start)
-    config['Time']['end'] = str(end)
+    config['Time']['start'] = str(start_time)
+    config['Time']['end'] = str(end_time)
     with open(f"{log_dir}info.yml", "w") as outfile: 
         yaml.dump(config, outfile, default_flow_style=False, sort_keys=False)
     with open(f"{base_dir}info.yml", "w") as f:
         yaml.dump(daily_config, f, default_flow_style=False, sort_keys=False)
     with open(f"{upload_file_base_dir}info.yml", "w") as f:
         yaml.dump(upload_config, f, default_flow_style=False, sort_keys=False)
-        
-def signal_handler(signum, frame):
+
+def stop_all_task():
     global task_list, target_date, expr_num, daily_config
-    print("Signal: ", signum)
     for i in task_list:
         i.terminate()
         if i.is_upload() and i.get_upload_target()!=None:
@@ -51,6 +50,10 @@ def signal_handler(signum, frame):
                 upload_config['pending'].remove(i.get_upload_target())
                 upload_config['uploaded'].append(i.get_upload_target())
     daily_config['pending'].append(expr_num)
+
+def signal_handler(signum, frame):
+    print("Signal: ", signum)
+    stop_all_task()
     generateReport()
     os._exit(0)  
 
@@ -71,19 +74,8 @@ def create_log_dir(config):
             os.makedirs(log_dir + "mobileinsight")
             break
 
-
-def execute_all():
-    global task_list
-    for task in task_list:
-        task.start()
-        time.sleep(1)
-        
-def generateUploadFile(target, upload_file_base_dir, target_date):
-    targetFile = shutil.make_archive(f'{target}', format='zip', root_dir = upload_file_base_dir)
-    os.rename(targetFile, f"{target_date}_{target}.zip")
-
-def main():
-    global task_list, start, config, targetFile, base_dir, daily_config, upload_config, upload_file_base_dir, target_date
+def load_config():
+    global task_list, config, targetFile, base_dir, daily_config, upload_config, upload_file_base_dir, target_date
     
     # Load config
     with open(args.config, "r") as f:
@@ -96,12 +88,6 @@ def main():
         daily_config['pending'] = []
         daily_config['uploaded'] = []
 
-    start = dt.datetime.now()
-    
-    tcpdump_opt = ""
-    log_file_name = start.strftime('%Y-%m-%d-%H-%M-%S')
-    expr_log_dir = log_dir + f"expr/"
-    
     if config["Default"]["Upload"]['Enable']:
         target_date = (
             (dt.date.today() - dt.timedelta(days=1)).strftime("%Y-%m-%d")
@@ -114,8 +100,15 @@ def main():
         elif os.path.exists(f"{upload_file_base_dir}info.yml"):
             with open(f"{upload_file_base_dir}info.yml", "r") as f:
                 upload_config = yaml.safe_load(f)
-        
+    print("Finish load config")
+
+def setup_task_list():
+    global config, task_list, upload_config, upload_targets, target_date, log_dir, start_time
     # Experiment setup
+    tcpdump_opt = ""
+    start_time = dt.datetime.now()
+    log_file_name = start_time.strftime('%Y-%m-%d-%H-%M-%S')
+
     i = 0
     for expr_type in config["Default"]["Type"]:
         opt = ""
@@ -149,19 +142,6 @@ def main():
         task = Task(exec_cmd, expr_type, isUpload, upload_target)
         task_list.append(task)
 
-    # Generate Upload file
-    thread_list = []
-    for target in upload_targets:
-        thread_list.append(threading.Thread(target=generateUploadFile,args=(target, upload_file_base_dir, target_date)))
-
-    # start
-    for t in thread_list:
-        t.start()
-    
-    # join
-    for t in thread_list:
-        t.join()
-
     # Tcpdump setup
     i = 0
     for tcpdump_config in config["Default"]["TcpDump"]:
@@ -178,7 +158,7 @@ def main():
         task = Task(exec_cmd, f"Tcpdump_{i}")
         task_list.insert(0,task) # exec tcpdump before expr
         i += 1
-    
+
     # Mobileinsight setup
     for d in config['Default']['Device']:
         mobileinsight_log_dir = log_dir + f"mobileinsight/"
@@ -187,8 +167,46 @@ def main():
         exec_cmd = f"sudo python3 tools/monitor.py -d {d} -b 9600 -f {mobileinsight_log_file} -dp {mobileinsight_decoded_file}"
         task = Task(exec_cmd, f"Mobileinsight_{d}")
         task_list.insert(0,task) # exec mobileinsight before expr
-        
+
+def generate_upload_file():
+    global upload_file_base_dir, target_date
+
+    def helper(target, upload_file_base_dir, target_date):
+        targetFile = shutil.make_archive(f'{target}', format='zip', root_dir = upload_file_base_dir)
+        os.rename(targetFile, f"{target_date}_{target}.zip")
+
+    # Generate Upload file
+    thread_list = []
+    for target in upload_targets:
+        thread_list.append(threading.Thread(target=helper,args=(target, upload_file_base_dir, target_date)))
+
+    # start
+    for t in thread_list:
+        t.start()
+    
+    # join
+    for t in thread_list:
+        t.join()
+
+def execute_all():
+    global task_list
+    for task in task_list:
+        task.start()
+        time.sleep(1)
+    print("Executing all")
+
+def restart():
+    stop_all_task()
+    generateReport()
     execute_all()
+
+def main():
+
+    load_config()
+    setup_task_list()
+    generate_upload_file()
+    execute_all()
+
     if config['Default']['Poll']['Enable']:
         while True:
             for t in task_list:
