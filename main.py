@@ -207,17 +207,14 @@ def main():
     generate_upload_file()
     execute_all()
 
-    if config['Default']['Poll']['Enable']:
-        while True:
-            for t in task_list:
-                if t.get_status() != None:
-                    print("process stop by: ",t.get_expr_type())
-                    signal_handler(t.get_status(), 0)
-            time.sleep(config['Default']['Poll']['Interval'])
-            ## TODO: sudo sync
-    else:
-        while True:
-            time.sleep(60)
+    while True:
+        os.system("sudo sync")
+        for t in task_list: 
+            if t.get_status() != None:
+                print("process stop by: ",t.get_expr_type())
+                signal_handler(t.get_status(), 0)
+        time.sleep(config['Default']['PollInterval'])
+
 
 
 if __name__ == '__main__':
