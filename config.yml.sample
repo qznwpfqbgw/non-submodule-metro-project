@@ -108,7 +108,12 @@ UDPClient:
 Dynamic_bandlock:
   Entry: "python3 Dynamic-Band-Locking/dynamic_bandlock/algorithm_v3.py"
   Device:
-    Flag: qc00 qc01
+    Flag: -d qc00 qc01
+  LogDir:
+    Flag: -l
+  Device_Setting:
+    Flag: -ds
+    Value: ./device_setting.json
 
 UDP_SNIFFER:
   Entry: "python3 tools/udp_sniffer.py"
