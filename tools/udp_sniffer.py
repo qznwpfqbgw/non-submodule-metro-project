@@ -116,13 +116,18 @@ if args.ports:
 else:
     bpf_text = bpf_text.replace('FILTER_PORT',"goto KEEP;")
 
+host_if_ip = get_ip_address(args.device)
+host_has_layer2 = get_arp_hwtype(args.device) != None 
+if host_has_layer2:
+    bpf_text = bpf_text.replace('PARSE_ETHERNET','struct ethernet_t *ethernet = cursor_advance(cursor, sizeof(*ethernet));')
+else:
+    bpf_text = bpf_text.replace('PARSE_ETHERNET','')
+
 bpf = BPF(text=bpf_text)
 
 function_skb_matching = bpf.load_func("packet_filter", BPF.SOCKET_FILTER)
 
 BPF.attach_raw_socket(function_skb_matching, args.device)
-host_if_ip = get_ip_address(args.device)
-host_has_layer2 = get_arp_hwtype(args.device) != None 
 socket_fd = function_skb_matching.sock
 fl = fcntl.fcntl(socket_fd, fcntl.F_GETFL)
 fcntl.fcntl(socket_fd, fcntl.F_SETFL, fl & (~os.O_NONBLOCK))
