@@ -172,7 +172,7 @@ def generate_upload_file():
     global upload_file_base_dir, target_date
 
     def helper(target, upload_file_base_dir, target_date):
-        targetFile = shutil.make_archive(f'{target}', format='zip', root_dir = upload_file_base_dir)
+        targetFile = shutil.make_archive(f'{target}', format='zip', root_dir = upload_file_base_dir + '/' + str(target))
         os.rename(targetFile, f"{target_date}_{target}.zip")
 
     # Generate Upload file
