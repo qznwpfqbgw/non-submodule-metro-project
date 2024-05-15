@@ -83,9 +83,8 @@ UDPClient:
   Port:
     Flag: -p
     Value: '26425'
-  SyncFile:
+  LogFile:
     Flag: -w
-    Value: ./logs
   TimeSyncPort:
     Flag: -tp
     Value: 26438
