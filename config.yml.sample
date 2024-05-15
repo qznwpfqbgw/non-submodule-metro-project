@@ -1,25 +1,13 @@
 Default:
-  Type: [UDPServer, UDP_SNIFFER] # This will match the key of Config
-  # LogDir: /home/wmnlab/github_code/Metro/Metro-Measurement/logs
+  Type: [UDPServer, UDP_SNIFFER1, UDP_SNIFFER2] # This will match the key of Config
   LogDir: logs
   Device: []
-  Poll:
-    Enable: True
-    Interval: 1
+  PollInterval: 3
   Upload:
     Enable: False
     Date: "" # If Date == "" means yesterday
-  TcpDump:
-    - Interface:
-        Flag: -i
-        Value: any
-      Port:
-        Flag: port
-        Value: "26425"
-      FileSize: 
-        Flag: -C
-        Value: 500
-
+  TcpDump: []
+        
 TCPv1:
   Entry: "iperf3" # Executable binary file or command
   Port:
@@ -27,7 +15,7 @@ TCPv1:
     Value: 26424
   Mode:
     Flag: -s
-  LogDir:
+  LogFile:
     Flag: --logfile
   Log:
     Flag: --json
@@ -67,10 +55,10 @@ UDPServer:
     Value: "0.0.0.0"
   Device:
     Flag: -d
-    Value: "qc01"
+    Value: "m11, m12"
   Port:
     Flag: -p
-    Value: '26425'
+    Value: '26425 26427'
   TimeSyncPort:
     Flag: -tp
     Value: 26438
@@ -91,10 +79,10 @@ UDPClient:
     Value: "140.112.20.183"
   Device:
     Flag: -d
-    Value: "qc00 qc01"
+    Value: "qc01"
   Port:
     Flag: -p
-    Value: '26430 26432'
+    Value: '26425'
   SyncFile:
     Flag: -w
     Value: ./logs
@@ -108,21 +96,33 @@ UDPClient:
 Dynamic_bandlock:
   Entry: "python3 Dynamic-Band-Locking/dynamic_bandlock/algorithm_v3.py"
   Device:
-    Flag: -d qc00 qc01
+    Flag: -d 
+    Value: m11 m12
   LogDir:
     Flag: -l
   Device_Setting:
     Flag: -ds
     Value: ./device_setting.json
 
-UDP_SNIFFER:
-  Entry: "python3 tools/udp_sniffer.py"
+
+UDP_SNIFFER1:
+  Entry: "sudo python3 tools/udp_sniffer.py"
   Device:
     Flag: -i
-    Value: qc01
-  LogDir:
+    Value: wlp0s20f3
+  LogFile:
     Flag: --file
   Port:
     Flag: -p
     Value: 26425,26426
   
+UDP_SNIFFER2:
+  Entry: "sudo python3 tools/udp_sniffer.py"
+  Device:
+    Flag: -i
+    Value: wlp0s20f3
+  LogFile:
+    Flag: --file
+  Port:
+    Flag: -p
+    Value: 26427,26428
