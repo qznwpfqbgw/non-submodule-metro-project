@@ -16,7 +16,7 @@ args = parser.parse_args()
 
 task_list = []
 base_dir = ""
-upload_file_base_dir = ""
+upload_file_base_dir = None
 upload_targets = []
 log_dir = ""
 start_time = None
@@ -37,8 +37,9 @@ def generateReport():
         yaml.dump(config, outfile, default_flow_style=False, sort_keys=False)
     with open(f"{base_dir}info.yml", "w") as f:
         yaml.dump(daily_config, f, default_flow_style=False, sort_keys=False)
-    with open(f"{upload_file_base_dir}info.yml", "w") as f:
-        yaml.dump(upload_config, f, default_flow_style=False, sort_keys=False)
+    if upload_file_base_dir!=None:
+        with open(f"{upload_file_base_dir}info.yml", "w") as f:
+            yaml.dump(upload_config, f, default_flow_style=False, sort_keys=False)
 
 def stop_all_task():
     global task_list, target_date, expr_num, daily_config
