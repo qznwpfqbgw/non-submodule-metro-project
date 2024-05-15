@@ -1,0 +1,11 @@
+#!/bin/bash
+
+PATH_TEMP_DIR="/home/wmnlab"
+PATH_UTILS="/home/wmnlab/github_code/Dynamic-Band-Locking/dynamic_bandlock/modem-utilities"
+
+function CHECK_temp_dir() {
+if [ ! -d "$PATH_TEMP_DIR/temp" ] 
+then
+	mkdir "$PATH_TEMP_DIR/temp"
+fi
+}

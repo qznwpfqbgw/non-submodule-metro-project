@@ -1,22 +1,16 @@
 # HOW TO USE (Quectel RM500Q only)   
 ## Step  
-1. use get-all-modem.py to get the current modems device node 
+1. copy the PATH\_for\_NTU\_exp to the gloable PATH such as /usr/local/bin/ (Modify the relative PATH for the utilitis in this file if needed)
 2. dial-qmi with the specific network interface
 ***
-note: copy the interface naming file, 70-persistent-net.rules into /etc/udev/rules.d/ to rename the device interface
+note: copy the interface naming file, 70-persistent-net.rules into /etc/udev/rules.d/ to rename the device interface   
+	  without adding the support of specific module, default name of the network interface for the modules are wwan0,wwan1...   
+	  set the configuration active: udevadm control --reload-rules && udevadm trigger
 ***
 modem-info to capture the current serving and neighbor cell information.   
 band-setting to enable the specific band setting.   
 qc-at to send the at command to specific quectel module.  
      
-## modem-info.sh  
-### Description:  
-    Acquire the serving/neighbour cell info from target at command port   
-    Loop if add delay -t argument and will auto record 
-    delete the looping file in the current directory to stop if running in background.   
-### Command:  
-    [bash] ./modem-info.sh -i [interface] {-t [delay sec]}   
-  
 ## band-setting.sh   
 ### Description:  
     This script can configure the LTE/NSA_NR band combo via the corresponding AT PORT  
@@ -31,7 +25,8 @@ qc-at to send the at command to specific quectel module.
 
 ## qc-at.sh  
 ### Description:  
-    at command of the specific module   
+    at command of the specific module
+	{TOP} variable of PATH of INTERFACE.lock file
 ### Command:   
     [bash] qc-at -i [interface] -c [at command]   
 
@@ -48,6 +43,7 @@ qc-at to send the at command to specific quectel module.
 
 ## get-all-modem.py  
 ### Description:  
+    To be removed in the future.  
     This python script is to get the all quectel RM500Q devices.   
     Process the RM500Q modeules with network interface are qc00 to qc03.   
 ### Command:   
@@ -56,8 +52,9 @@ qc-at to send the at command to specific quectel module.
 ## dial-qmi.sh   
 ### Description:  
     Dial the target qmi dev and network interface with target APN of "internet".  
+    Flag -d to set as the default route. (arg is not needed)    
 ### Command:   
-    [bash] ./dial-qmi.sh -i [interface]  
+    [bash] ./dial-qmi.sh -i [interface] (-d)
    
 ## disconnect-qmi.sh   
 ### Description:   

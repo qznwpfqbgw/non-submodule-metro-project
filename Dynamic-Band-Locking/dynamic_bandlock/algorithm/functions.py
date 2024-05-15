@@ -12,8 +12,7 @@ from .analyzer import FeatureExtracter, TimeSyncAnalyzer
 
 from .predictor import Predictor
 
-def get_ser(folder, *dev):
-    d2s_path = os.path.join(folder, 'device_to_serial.json')
+def get_ser(d2s_path, *dev):
     with open(d2s_path, 'r') as f:
         device_to_serial = json.load(f)
         return tuple(os.path.join("/dev/serial/by-id", f"usb-Quectel_RM500Q-GL_{device_to_serial[d]}-if00-port0") for d in dev)
@@ -149,3 +148,12 @@ def device_running(dev, ser, baudrate, time_seq, output_queue, start_sync_event,
         f_out.close()
         time.sleep(.5)
         print(f'End {dev}.')
+
+def create_dir(log_dir):
+    os.umask(0)
+    if not os.path.exists(log_dir+'/data/record'):
+        os.makedirs(log_dir + "/data/record/")
+    if not os.path.exists(log_dir+'/data/TimeSync'):
+        os.makedirs(log_dir + "/data/TimeSync/")
+    if not os.path.exists(log_dir+'/data/mobileinsight'):
+        os.makedirs(log_dir + "/data/mobileinsight/")

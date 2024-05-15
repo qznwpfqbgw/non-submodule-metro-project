@@ -6,9 +6,9 @@
 #       loop if add delay -t argument
 # input: -i interface -t delay time
 # output: at command information
-
-source ./quectel-path.sh
-
+source PATH_for_NTU_exp
+source $PATH_UTILS/quectel-path.sh
+SUDO=sudo
 helpFunction()
 {
     echo ""
@@ -34,6 +34,4 @@ then
 fi
 
 GET_AT_PATH $interface
-wdm=`(head -1 ./temp/$interface)`
-
 mxat -d $DEV_AT_PATH -c at+qeng=\"servingcell\"

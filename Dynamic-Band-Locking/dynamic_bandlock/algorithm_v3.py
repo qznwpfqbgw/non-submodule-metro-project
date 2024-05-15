@@ -3,7 +3,7 @@
 import os
 import sys
 import time
-
+import signal
 import multiprocessing
 from multiprocessing import Process
 import argparse
@@ -12,18 +12,43 @@ import random
 from algorithm.at_commands import AT_Cmd_Runner
 from algorithm.functions import *
 
-if __name__ == "__main__":
+p1 = None
+p2 = None
+def signal_handler(signum, frame):
+    global p1, p2
+    if p1 != None:
+        p1.terminate()
+    if p2 != None:
+        p2.terminate()
+    print("dynamic",flush=True)
+    os._exit(0)  
     
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGTSTP, signal_handler)
     script_folder = os.path.dirname(os.path.abspath(__file__))
     modem_utils_folder = os.path.join(script_folder, 'modem-utilities')
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--device", type=str, nargs='+', help="device: e.g. qc00 qc01")
     parser.add_argument("-b", "--baudrate", type=int, help='baudrate', default=9600)
+    parser.add_argument("-l", "--log_dir", type=str, help='log dir')
+    parser.add_argument("-m", "--model_dir", type=str, help='model dir')
+    parser.add_argument("-ds", "--device_setting", type=str, help='model dir', default=os.path.join(script_folder, 'device_to_serial.json'))
     args = parser.parse_args()
     baudrate = args.baudrate
     dev1, dev2 = args.device[0], args.device[1]
-    ser1, ser2 = get_ser(script_folder, *[dev1, dev2])
+    ser1, ser2 = get_ser(args.device_setting, *[dev1, dev2])
+    if args.model_dir != None:
+        model_folder = os.path.join(args.model_dir, 'model')
+    else:
+        model_folder = os.path.join(script_folder, 'model')
+    if args.log_dir != None:
+        create_dir(args.log_dir)
+        data_folder = os.path.join(args.log_dir, 'data')
+    else:
+        data_folder = os.path.join(script_folder, 'data')
     
     at_cmd_runner = AT_Cmd_Runner(modem_utils_folder)
     os.chdir(at_cmd_runner.dir_name) # cd modem utils dir to run at cmd
@@ -44,13 +69,14 @@ if __name__ == "__main__":
     time.sleep(.2)
     
     SHOW_HO = True
-    model_folder = os.path.join(script_folder, 'model')
-    data_folder = os.path.join(script_folder, 'data')
 
     p1 = Process(target=device_running, args=[dev1, ser1, baudrate, time_seq, output_queue, start_sync_event, 
                  model_folder, data_folder, SHOW_HO])     
     p2 = Process(target=device_running, args=[dev2, ser2, baudrate, time_seq, output_queue, start_sync_event, 
                  model_folder, data_folder, SHOW_HO])
+    p1.daemon = True
+    p2.daemon = True
+    
     p1.start()
     p2.start()
     
@@ -105,27 +131,27 @@ if __name__ == "__main__":
                             choices = [c for c in all_band_choice if (info1[2] not in c and info2[2] not in c)] 
                             choice =  random.sample(choices, 1)[0]
                             print(f'{dev1} far but {dev2} close with same PCI!!!')
-                            at_cmd_runner.change_band(dev2, choice, setting2)
-                            setting2, rest = choice, rest_time
+                            if at_cmd_runner.change_band(dev2, choice, setting2):
+                                setting2, rest = choice, rest_time
                             
                     elif case1 == 'Close' and case2 == 'Far':
                         if info1[0] == info2[0]: # Same PCI
                             choices = [c for c in all_band_choice if (info1[2] not in c and info2[2] not in c)] 
                             choice =  random.sample(choices, 1)[0]
                             print(f'{dev2} far but {dev1} close with same PCI!!!')
-                            at_cmd_runner.change_band(dev1, choice, setting1)
-                            setting1, rest = choice, rest_time
+                            if at_cmd_runner.change_band(dev1, choice, setting1):
+                                setting1, rest = choice, rest_time
                             
                     elif case1 == 'Close' and case2 == 'Close':
                         choices = [c for c in all_band_choice if (info1[2] not in c and info2[2] not in c)] 
                         choice =  random.sample(choices, 1)[0]
                         print(f'R1/R2 both close')
                         if prob1 > prob2:
-                            at_cmd_runner.change_band(dev1, choice, setting1)
-                            setting1, rest = choice, rest_time
+                            if at_cmd_runner.change_band(dev1, choice, setting1):
+                                setting1, rest = choice, rest_time
                         else:
-                            at_cmd_runner.change_band(dev2, choice, setting2)
-                            setting2, rest = choice, rest_time 
+                            if at_cmd_runner.change_band(dev2, choice, setting2):
+                                setting2, rest = choice, rest_time 
                 #############################################
                 
             end = time.time()
@@ -137,9 +163,6 @@ if __name__ == "__main__":
         # Stop Record
         print('Main process received KeyboardInterrupt')
         
-        p1.join()
-        p2.join()
-
         time.sleep(1)
         print("Process killed, closed.")
     

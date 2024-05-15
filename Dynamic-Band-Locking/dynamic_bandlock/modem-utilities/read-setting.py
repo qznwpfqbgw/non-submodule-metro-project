@@ -1,8 +1,8 @@
-#!/usr/bin/python2.7
+#!/usr/bin/python3
 
 import os
 import sys
-content=["IPv4 address","IPv4 subnet mask","IPv4 gateway address","CID"]
+content=["IPv4 address","IPv4 subnet mask","IPv4 gateway address","CID","IPv4 primary DNS","IPv4 secondary DNS"]
 
 def check_content(input):
     for item in content:
