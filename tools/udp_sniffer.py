@@ -49,7 +49,7 @@ int packet_filter(struct __sk_buff *skb) {
     u32 payload_offset = 0;
     u32 payload_length = 0;
     
-    struct ethernet_t *ethernet = cursor_advance(cursor, sizeof(*ethernet));
+    PARSE_ETHERNET
     struct ip_t *ip = cursor_advance(cursor, sizeof(*ip));
 
     if (ip->ver != 4)
